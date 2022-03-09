@@ -8,13 +8,16 @@ pip install sainpse
 - The only utltiy function available now is TwelveData financial history data set.
 
 ### Example
+
+```python
 from sainpse.finance.data import TwelveData
+```
 
-- start    = pendulum.parse('2020-05-30 07:00:00',tz='Africa/Johannesburg')
-- end      = pendulum.parse('2022-01-14 17:00:00',tz='Africa/Johannesburg')
-
-- TDH      = TwelveData(start=start,end=end,interval="1min",asset="EUR/USD",token="Your Twelve Data Token")
-
-- history  = TDH.getHistory()
+```python
+start    = pendulum.parse('2020-05-30 07:00:00',tz='Africa/Johannesburg')
+end      = pendulum.parse('2022-01-14 17:00:00',tz='Africa/Johannesburg')
+TDH      = TwelveData(start=start,end=end,interval="1min",asset="EUR/USD",token="Your Twelve Data Token")
+history  = TDH.getHistory()
+```
 
 
