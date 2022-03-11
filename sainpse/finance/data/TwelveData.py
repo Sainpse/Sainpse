@@ -7,26 +7,6 @@ import time
 
 class TwelveData():
 
-
-    def __dateAppender(self,date):
-
-        new_start ={"1min": date.add(minutes=1),
-                    "15min":date.add(minutes=15),
-                    "30min":date.add(minutes=30),
-                    "45min":date.add(minutes=45),
-                    "1h":date.add(hours=1),
-                    "2h":date.add(hours=2),
-                    "4h":date.add(hours=4),
-                    "8h":date.add(hours=8),
-                    "1day":date.add(days=1),
-                    "1week":date.add(weeks=1),
-                    "1month":date.add(months=1),
-                    "1year":date.add(years=1)}
-                    
-        print(f"Before:{date}")
-        print(f"after:{new_start[self.interval]}")
-
-        return new_start[self.interval]
     
     def __init__(self,start=None,end=None,interval="15min",asset=None,token=None):
 
@@ -49,6 +29,7 @@ class TwelveData():
         self.asset    = asset
         self.history  = None
         self.token    = token
+
 
         self.td     = TDClient(apikey=self.token)
 
@@ -131,3 +112,21 @@ class TwelveData():
         return dataHistory
 
             
+    def getRealTime(self):
+
+        ts = self.td.time_series(
+            symbol=self.asset,
+            interval=self.interval,
+            outputsize=60,
+            order="desc",
+            timezone="Africa/Johannesburg",
+        )
+
+        dataReal = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
+
+        data = dataReal.sort_index(ascending=True)
+        data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
+        obs  = data.tail(15).values
+        obs  = obs.reshape(165,)
+
+        return obs
