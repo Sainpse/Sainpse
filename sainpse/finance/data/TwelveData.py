@@ -1,10 +1,32 @@
 from twelvedata import TDClient
+from twelvedata.exceptions import InvalidApiKeyError
 import pendulum
 import time
 
 
 
 class TwelveData():
+
+
+    def __dateAppender(self,date):
+
+        new_start ={"1min": date.add(minutes=1),
+                    "15min":date.add(minutes=15),
+                    "30min":date.add(minutes=30),
+                    "45min":date.add(minutes=45),
+                    "1h":date.add(hours=1),
+                    "2h":date.add(hours=2),
+                    "4h":date.add(hours=4),
+                    "8h":date.add(hours=8),
+                    "1day":date.add(days=1),
+                    "1week":date.add(weeks=1),
+                    "1month":date.add(months=1),
+                    "1year":date.add(years=1)}
+                    
+        print(f"Before:{date}")
+        print(f"after:{new_start[self.interval]}")
+
+        return new_start[self.interval]
     
     def __init__(self,start=None,end=None,interval="15min",asset=None,token=None):
 
@@ -40,7 +62,7 @@ class TwelveData():
         EarliestData = ""
 
         tstamp       = self.td.get_earliest_timestamp(interval=self.interval,symbol=self.asset)
-        response     =  tstamp.execute()
+        response     = tstamp.execute()
         EarliestData = response.content
 
 
@@ -50,12 +72,13 @@ class TwelveData():
     
 
     def getHistory(self):
+
         """recursively gets history and retries every minutes once free minute tokens are exhausted
 
         Returns:
             [pandas.DataFrame]: Returns the symbol/asset history along with several indicators
         """
-
+        printMessage = True
         try:
 
             if self.history is None:
@@ -63,21 +86,25 @@ class TwelveData():
             else:
                 self.history = self.history.append(self.getTimeSeries())
 
-            newStart = self.history.tail(1).index[0].strftime('%Y-%m-%d %X')
+            newStart = self.history.tail(1).index[0].strftime("%Y-%m-%d %H:%M:%S")
             self.end = pendulum.parse(newStart,tz='Africa/Johannesburg')
-
-            print(f"start:{self.end.to_datetime_string()}")
            
-            if self.end.date() != self.start.date():
-                self.getHistory()
-            else:
+            if self.end.date() >= self.start.date():
                 return self.history
+            else:
+                self.getHistory()
                 
-        except Exception as e:
+        
+        except InvalidApiKeyError as e:
             print(e)
-            print("wait for 1min:5sec to try again...")
-            print(f"end:{self.end.to_datetime_string()}")
-            time.sleep(65)
+            return None
+        except Exception as e:
+            if printMessage:
+                print(e)
+                printMessage = False
+            print("Retrying request after 1:min,2:sec")
+            time.sleep(62)
+            print("Retrying request...")
             self.getHistory()
 
         ### Drop Dublicates
