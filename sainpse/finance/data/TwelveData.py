@@ -1,10 +1,12 @@
 from twelvedata import TDClient
+from twelvedata.exceptions import InvalidApiKeyError
 import pendulum
 import time
 
 
 
 class TwelveData():
+
     
     def __init__(self,start=None,end=None,interval="15min",asset=None,token=None):
 
@@ -28,6 +30,7 @@ class TwelveData():
         self.history  = None
         self.token    = token
 
+
         self.td     = TDClient(apikey=self.token)
 
 
@@ -40,7 +43,7 @@ class TwelveData():
         EarliestData = ""
 
         tstamp       = self.td.get_earliest_timestamp(interval=self.interval,symbol=self.asset)
-        response     =  tstamp.execute()
+        response     = tstamp.execute()
         EarliestData = response.content
 
 
@@ -50,12 +53,13 @@ class TwelveData():
     
 
     def getHistory(self):
+
         """recursively gets history and retries every minutes once free minute tokens are exhausted
 
         Returns:
             [pandas.DataFrame]: Returns the symbol/asset history along with several indicators
         """
-
+        printMessage = True
         try:
 
             if self.history is None:
@@ -63,21 +67,25 @@ class TwelveData():
             else:
                 self.history = self.history.append(self.getTimeSeries())
 
-            newStart = self.history.tail(1).index[0].strftime('%Y-%m-%d %X')
+            newStart = self.history.tail(1).index[0].strftime("%Y-%m-%d %H:%M:%S")
             self.end = pendulum.parse(newStart,tz='Africa/Johannesburg')
-
-            print(f"start:{self.end.to_datetime_string()}")
            
-            if self.end.date() != self.start.date():
-                self.getHistory()
-            else:
+            if self.end.date() >= self.start.date():
                 return self.history
+            else:
+                self.getHistory()
                 
-        except Exception as e:
+        
+        except InvalidApiKeyError as e:
             print(e)
-            print("wait for 1min:5sec to try again...")
-            print(f"end:{self.end.to_datetime_string()}")
-            time.sleep(65)
+            return None
+        except Exception as e:
+            if printMessage:
+                print(e)
+                printMessage = False
+            print("Retrying request after 1:min,2:sec")
+            time.sleep(62)
+            print("Retrying request...")
             self.getHistory()
 
         ### Drop Dublicates
@@ -104,3 +112,21 @@ class TwelveData():
         return dataHistory
 
             
+    def getRealTime(self):
+
+        ts = self.td.time_series(
+            symbol=self.asset,
+            interval=self.interval,
+            outputsize=60,
+            order="desc",
+            timezone="Africa/Johannesburg",
+        )
+
+        dataReal = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
+
+        data = dataReal.sort_index(ascending=True)
+        data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
+        obs  = data.tail(15).values
+        obs  = obs.reshape(165,)
+
+        return obs
