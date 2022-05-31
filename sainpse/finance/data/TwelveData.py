@@ -70,7 +70,7 @@ class TwelveData():
             newStart = self.history.tail(1).index[0].strftime("%Y-%m-%d %H:%M:%S")
             self.end = pendulum.parse(newStart,tz='Africa/Johannesburg')
            
-            if self.end.date() >= self.start.date():
+            if self.end.date() <= self.start.date():
                 return self.history
             else:
                 self.getHistory()
@@ -108,7 +108,7 @@ class TwelveData():
             timezone="Africa/Johannesburg",
         )
 
-        dataHistory = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
+        dataHistory = ts.with_percent_b().with_apo().with_supertrend().with_trange().as_pandas()
         return dataHistory
 
             
@@ -122,7 +122,7 @@ class TwelveData():
             timezone="Africa/Johannesburg",
         )
 
-        dataReal = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
+        dataReal = ts.with_percent_b().with_apo().with_supertrend().with_trange().as_pandas()
 
         data = dataReal.sort_index(ascending=True)
         data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
