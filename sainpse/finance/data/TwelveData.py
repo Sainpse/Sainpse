@@ -112,12 +112,12 @@ class TwelveData():
         return dataHistory
 
             
-    def getRealTime(self):
+    def getRealTime(self, lookback=150):
 
         ts = self.td.time_series(
             symbol=self.asset,
             interval=self.interval,
-            outputsize=60,
+            outputsize=lookback,
             order="desc",
             timezone="Africa/Johannesburg",
         )
