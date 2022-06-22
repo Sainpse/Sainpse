@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "Sainpse"
-version = "0.2.0"
+version = "0.2.2"
 description = "The Sainpse Institute Utility Python Packages - Bugfixes"
 authors = ["Marcus Madumo <marcusm@sainpse.com>"]
 
