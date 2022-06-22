@@ -126,6 +126,7 @@ class TwelveData():
 
         data = dataReal.sort_index(ascending=True)
         data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
-        obs  = data.reshape(165,)
+        obs  = data.tail(15).values
+        obs  = obs.values.reshape(165,)
 
         return obs
