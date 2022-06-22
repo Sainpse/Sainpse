@@ -112,7 +112,7 @@ class TwelveData():
         return dataHistory
 
             
-    def getRealTime(self, lookback=150):
+    def getRealTime(self, lookback=120):
 
         ts = self.td.time_series(
             symbol=self.asset,
@@ -126,7 +126,6 @@ class TwelveData():
 
         data = dataReal.sort_index(ascending=True)
         data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
-        obs  = data.tail(15).values
-        obs  = obs.reshape(165,)
+        obs  = obs.reshape(1320,)
 
         return obs
