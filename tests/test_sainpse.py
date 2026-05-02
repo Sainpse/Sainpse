@@ -1,12 +1,18 @@
 import sys
+import tomllib
 import types
+from pathlib import Path
 
 import sainpse
 from sainpse import __version__
 
 
 def test_version():
-    assert __version__ == "0.2.3"
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    with pyproject.open("rb") as file:
+        config = tomllib.load(file)
+
+    assert __version__ == config["tool"]["poetry"]["version"]
 
 
 def test_twelve_data_is_available_from_package_root(monkeypatch):

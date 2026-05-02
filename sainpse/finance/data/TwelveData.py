@@ -38,7 +38,6 @@ DEFAULT_OBSERVATION_COLUMNS = (
     "trange",
     "ultosc",
 )
-_INFER_SHAPE = -1
 
 
 def _append_history(history, new_history):
@@ -215,4 +214,4 @@ class TwelveData:
         technical_indicator_data = self._apply_indicators(time_series)
         ordered_data = technical_indicator_data.sort_index(ascending=True)
         observations = ordered_data[list(self.columns)]
-        return observations.values.reshape(_INFER_SHAPE)
+        return observations.values.reshape(-1)  # flatten the selected observation window
