@@ -38,7 +38,7 @@ DEFAULT_OBSERVATION_COLUMNS = (
     "trange",
     "ultosc",
 )
-_FLAT_OBSERVATION_SHAPE = -1
+_INFER_FLAT_OBSERVATION_DIMENSION = -1
 
 
 def _append_history(history, new_history):
@@ -162,7 +162,7 @@ class TwelveData:
 
         while True:
             try:
-                next_history = self.getTimeSeries()
+                next_history = self._get_history_data()
 
                 if self.history is None:
                     self.history = next_history
@@ -193,8 +193,7 @@ class TwelveData:
                 time.sleep(self.retry_delay_seconds)
                 print("Retrying request...")
 
-    def getTimeSeries(self):
-        self._ensure_history_window()
+    def _get_history_data(self):
         time_series = self._build_time_series(
             start_date=self.start.to_datetime_string(),
             end_date=self.end.to_datetime_string(),
@@ -203,10 +202,14 @@ class TwelveData:
         )
         return self._apply_indicators(time_series)
 
+    def getTimeSeries(self):
+        self._ensure_history_window()
+        return self._get_history_data()
+
     def getRealTime(self, lookback=DEFAULT_REALTIME_LOOKBACK):
         lookback = self._validate_non_negative_int(lookback, "lookback")
         time_series = self._build_time_series(outputsize=lookback, order="desc")
         technical_indicator_data = self._apply_indicators(time_series)
         ordered_data = technical_indicator_data.sort_index(ascending=True)
         observations = ordered_data[list(self.columns)]
-        return observations.values.reshape(_FLAT_OBSERVATION_SHAPE)
+        return observations.values.reshape(_INFER_FLAT_OBSERVATION_DIMENSION)
