@@ -32,6 +32,8 @@ def load_twelve_data_module(monkeypatch):
     monkeypatch.setitem(sys.modules, "twelvedata", fake_twelvedata)
     monkeypatch.setitem(sys.modules, "twelvedata.exceptions", fake_exceptions)
     monkeypatch.setitem(sys.modules, "pendulum", fake_pendulum)
+    sys.modules.pop("sainpse.finance", None)
+    sys.modules.pop("sainpse.finance.data", None)
     sys.modules.pop("sainpse.finance.data.TwelveData", None)
 
     return importlib.import_module("sainpse.finance.data.TwelveData")
