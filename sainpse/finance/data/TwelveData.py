@@ -5,6 +5,9 @@ import pendulum
 import time
 
 
+_FLAT_OBSERVATION_SHAPE = -1
+
+
 def _append_history(history, new_history):
     append = getattr(history, "append", None)
 
@@ -136,6 +139,6 @@ class TwelveData():
 
         data = technical_indicator_data.sort_index(ascending=True)
         data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
-        obs = data.values.reshape(-1)
+        obs = data.values.reshape(_FLAT_OBSERVATION_SHAPE)
 
         return obs
