@@ -1,1 +1,12 @@
-__version__ = '0.1.0'
+from importlib import import_module
+
+
+__version__ = "0.2.3"
+__all__ = ["__version__", "TwelveData"]
+
+
+def __getattr__(name):
+    if name == "TwelveData":
+        return import_module("sainpse.finance.data").TwelveData
+
+    raise AttributeError(f"module 'sainpse' has no attribute {name!r}")
