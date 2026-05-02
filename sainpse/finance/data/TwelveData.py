@@ -140,9 +140,9 @@ class TwelveData():
             timezone="Africa/Johannesburg",
         )
 
-        enriched_timeseries_data = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
+        enriched_data = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
 
-        data = enriched_timeseries_data.sort_index(ascending=True)
+        data = enriched_data.sort_index(ascending=True)
         data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
         obs = data.values.reshape(-1)
 

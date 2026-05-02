@@ -2,6 +2,8 @@ import importlib
 import sys
 import types
 
+import pytest
+
 
 def load_twelve_data_module(monkeypatch):
     fake_exceptions = types.ModuleType("twelvedata.exceptions")
@@ -50,7 +52,8 @@ def test_append_history_falls_back_to_pandas_concat(monkeypatch):
     assert len(calls[0]) == 2
 
 
-def test_get_real_time_flattens_for_any_lookback(monkeypatch):
+@pytest.mark.parametrize("lookback", [0, 2])
+def test_get_real_time_flattens_for_any_lookback(monkeypatch, lookback):
     module = load_twelve_data_module(monkeypatch)
 
     class FakeValues:
@@ -114,9 +117,9 @@ def test_get_real_time_flattens_for_any_lookback(monkeypatch):
     client = module.TwelveData(start=None, end=None, asset="EUR/USD", token="token")
     client.td = FakeClient(frame)
 
-    result = client.getRealTime(lookback=2)
+    result = client.getRealTime(lookback=lookback)
 
     assert result == (-1,)
     assert values.shape == (-1,)
     assert frame.sorted_ascending is True
-    assert client.td.calls[0]["outputsize"] == 2
+    assert client.td.calls[0]["outputsize"] == lookback
