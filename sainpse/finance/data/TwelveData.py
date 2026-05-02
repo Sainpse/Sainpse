@@ -4,6 +4,17 @@ import pendulum
 import time
 
 
+def _append_history(history, new_history):
+    append = getattr(history, "append", None)
+
+    if callable(append):
+        return append(new_history)
+
+    import pandas as pd
+
+    return pd.concat([history, new_history])
+
+
 
 class TwelveData():
 
@@ -65,7 +76,7 @@ class TwelveData():
             if self.history is None:
                 self.history = self.getTimeSeries()
             else:
-                self.history = self.history.append(self.getTimeSeries())
+                self.history = _append_history(self.history, self.getTimeSeries())
 
             newStart = self.history.tail(1).index[0].strftime("%Y-%m-%d %H:%M:%S")
             self.end = pendulum.parse(newStart,tz='Africa/Johannesburg')
@@ -73,7 +84,7 @@ class TwelveData():
             if self.end.date() <= self.start.date():
                 return self.history
             else:
-                self.getHistory()
+                return self.getHistory()
                 
         
         except InvalidApiKeyError as e:
@@ -86,7 +97,7 @@ class TwelveData():
             print("Retrying request after 1:min,2:sec")
             time.sleep(62)
             print("Retrying request...")
-            self.getHistory()
+            return self.getHistory()
 
         ### Drop Dublicates
         self.history = self.history.drop_duplicates(keep = 'first')
@@ -126,6 +137,6 @@ class TwelveData():
 
         data = dataReal.sort_index(ascending=True)
         data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
-        obs  = data.values.reshape(1320,)
+        obs  = data.values.reshape(-1)
 
         return obs
