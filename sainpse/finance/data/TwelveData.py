@@ -1,25 +1,17 @@
 from twelvedata import TDClient
 from twelvedata.exceptions import InvalidApiKeyError
+import importlib
 import pendulum
 import time
 
 
-_PANDAS = None
-
-
 def _append_history(history, new_history):
-    global _PANDAS
-
     append = getattr(history, "append", None)
 
     if callable(append):
         return append(new_history)
 
-    if _PANDAS is None:
-        import pandas as pd
-        _PANDAS = pd
-
-    return _PANDAS.concat([history, new_history])
+    return importlib.import_module("pandas").concat([history, new_history])
 
 
 
@@ -140,9 +132,9 @@ class TwelveData():
             timezone="Africa/Johannesburg",
         )
 
-        enriched_data = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
+        technical_indicator_data = ts.with_percent_b().with_stoch(slow_k_period=3).with_apo().with_supertrend().with_trange().with_ultosc().as_pandas()
 
-        data = enriched_data.sort_index(ascending=True)
+        data = technical_indicator_data.sort_index(ascending=True)
         data = data[["open","high","low","close","percent_b","slow_k","slow_d","apo","supertrend","trange","ultosc"]]
         obs = data.values.reshape(-1)
 
