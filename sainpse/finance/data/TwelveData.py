@@ -4,15 +4,22 @@ import pendulum
 import time
 
 
+_PANDAS = None
+
+
 def _append_history(history, new_history):
+    global _PANDAS
+
     append = getattr(history, "append", None)
 
     if callable(append):
         return append(new_history)
 
-    import pandas as pd
+    if _PANDAS is None:
+        import pandas as pd
+        _PANDAS = pd
 
-    return pd.concat([history, new_history])
+    return _PANDAS.concat([history, new_history])
 
 
 

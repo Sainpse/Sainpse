@@ -1,10 +1,6 @@
-import importlib.util
+import importlib
 import sys
 import types
-from pathlib import Path
-
-
-MODULE_PATH = Path(__file__).resolve().parents[1] / "sainpse" / "finance" / "data" / "TwelveData.py"
 
 
 def load_twelve_data_module(monkeypatch):
@@ -29,11 +25,9 @@ def load_twelve_data_module(monkeypatch):
     monkeypatch.setitem(sys.modules, "twelvedata", fake_twelvedata)
     monkeypatch.setitem(sys.modules, "twelvedata.exceptions", fake_exceptions)
     monkeypatch.setitem(sys.modules, "pendulum", fake_pendulum)
+    sys.modules.pop("sainpse.finance.data.TwelveData", None)
 
-    spec = importlib.util.spec_from_file_location("test_twelve_data_module", MODULE_PATH)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
+    return importlib.import_module("sainpse.finance.data.TwelveData")
 
 
 def test_append_history_falls_back_to_pandas_concat(monkeypatch):
