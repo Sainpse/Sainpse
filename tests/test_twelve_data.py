@@ -5,48 +5,57 @@ import types
 import pytest
 
 
-def load_twelve_data_module(monkeypatch):
-    fake_exceptions = types.ModuleType("twelvedata.exceptions")
+@pytest.fixture
+def twelve_data_module_loader(monkeypatch):
+    def load():
+        fake_exceptions = types.ModuleType("twelvedata.exceptions")
 
-    class FakeInvalidApiKeyError(Exception):
-        pass
+        class FakeInvalidApiKeyError(Exception):
+            pass
 
-    fake_exceptions.InvalidApiKeyError = FakeInvalidApiKeyError
+        fake_exceptions.InvalidApiKeyError = FakeInvalidApiKeyError
 
-    fake_twelvedata = types.ModuleType("twelvedata")
+        fake_twelvedata = types.ModuleType("twelvedata")
 
-    class FakeTDClient:
-        def __init__(self, apikey):
-            self.apikey = apikey
-            self.calls = []
+        class FakeTDClient:
+            def __init__(self, apikey):
+                self.apikey = apikey
+                self.calls = []
 
-        def time_series(self, **kwargs):
-            self.calls.append(kwargs)
-            return kwargs
+            def time_series(self, **kwargs):
+                self.calls.append(kwargs)
+                return kwargs
 
-    fake_twelvedata.TDClient = FakeTDClient
+        fake_twelvedata.TDClient = FakeTDClient
 
-    fake_pendulum = types.ModuleType("pendulum")
-    fake_pendulum.parse = lambda value, tz=None: value
+        fake_pendulum = types.ModuleType("pendulum")
+        fake_pendulum.parse = lambda value, tz=None: value
 
-    monkeypatch.setitem(sys.modules, "twelvedata", fake_twelvedata)
-    monkeypatch.setitem(sys.modules, "twelvedata.exceptions", fake_exceptions)
-    monkeypatch.setitem(sys.modules, "pendulum", fake_pendulum)
-    sys.modules.pop("sainpse.finance", None)
-    sys.modules.pop("sainpse.finance.data", None)
-    sys.modules.pop("sainpse.finance.data.TwelveData", None)
+        monkeypatch.setitem(sys.modules, "twelvedata", fake_twelvedata)
+        monkeypatch.setitem(sys.modules, "twelvedata.exceptions", fake_exceptions)
+        monkeypatch.setitem(sys.modules, "pendulum", fake_pendulum)
+        sys.modules.pop("sainpse.finance", None)
+        sys.modules.pop("sainpse.finance.data", None)
+        sys.modules.pop("sainpse.finance.data.TwelveData", None)
 
-    return importlib.import_module("sainpse.finance.data.TwelveData")
+        return importlib.import_module("sainpse.finance.data.TwelveData")
 
-
-def build_client(module, **kwargs):
-    params = {"asset": "EUR/USD", "token": "token"}
-    params.update(kwargs)
-    return module.TwelveData(**params)
+    return load
 
 
-def test_append_history_falls_back_to_pandas_concat(monkeypatch):
-    module = load_twelve_data_module(monkeypatch)
+@pytest.fixture
+def build_client(twelve_data_module_loader):
+    def factory(**kwargs):
+        module = twelve_data_module_loader()
+        params = {"asset": "EUR/USD", "token": "token"}
+        params.update(kwargs)
+        return module.TwelveData(**params)
+
+    return factory
+
+
+def test_append_history_falls_back_to_pandas_concat(monkeypatch, twelve_data_module_loader):
+    module = twelve_data_module_loader()
     calls = []
 
     fake_pandas = types.ModuleType("pandas")
@@ -77,16 +86,12 @@ def test_append_history_falls_back_to_pandas_concat(monkeypatch):
         ({"columns": []}, "columns must contain at least one column name"),
     ],
 )
-def test_init_validates_configuration(monkeypatch, kwargs, message):
-    module = load_twelve_data_module(monkeypatch)
-
+def test_init_validates_configuration(build_client, kwargs, message):
     with pytest.raises(ValueError, match=message):
-        build_client(module, **kwargs)
+        build_client(**kwargs)
 
 
-def test_get_time_series_uses_configured_request_arguments(monkeypatch):
-    module = load_twelve_data_module(monkeypatch)
-
+def test_get_time_series_uses_configured_request_arguments(build_client):
     class FakeDateTime:
         def __init__(self, text):
             self.text = text
@@ -98,7 +103,6 @@ def test_get_time_series_uses_configured_request_arguments(monkeypatch):
             return self.text < other.text
 
     client = build_client(
-        module,
         start=FakeDateTime("2024-01-01 00:00:00"),
         end=FakeDateTime("2024-01-02 00:00:00"),
         interval="1h",
@@ -130,18 +134,15 @@ def test_get_time_series_uses_configured_request_arguments(monkeypatch):
     assert applied == [client.td.calls[0]]
 
 
-def test_get_history_requires_start_and_end(monkeypatch):
-    module = load_twelve_data_module(monkeypatch)
-    client = build_client(module)
+def test_get_history_requires_start_and_end(build_client):
+    client = build_client()
 
     with pytest.raises(ValueError, match="start and end are required"):
         client.getHistory()
 
 
 @pytest.mark.parametrize("lookback", [0, 2])
-def test_get_real_time_flattens_selected_columns(monkeypatch, lookback):
-    module = load_twelve_data_module(monkeypatch)
-
+def test_get_real_time_flattens_selected_columns(build_client, lookback):
     class FakeValues:
         def __init__(self):
             self.shape = None
@@ -166,7 +167,7 @@ def test_get_real_time_flattens_selected_columns(monkeypatch, lookback):
 
     values = FakeValues()
     frame = FakeFrame(values)
-    client = build_client(module, columns=("open", "close"))
+    client = build_client(columns=("open", "close"))
     applied = []
 
     def fake_apply_indicators(time_series):
@@ -185,9 +186,8 @@ def test_get_real_time_flattens_selected_columns(monkeypatch, lookback):
     assert applied == [client.td.calls[0]]
 
 
-def test_get_real_time_validates_lookback(monkeypatch):
-    module = load_twelve_data_module(monkeypatch)
-    client = build_client(module)
+def test_get_real_time_validates_lookback(build_client):
+    client = build_client()
 
     with pytest.raises(ValueError, match="lookback must be a non-negative integer"):
         client.getRealTime(lookback=-1)

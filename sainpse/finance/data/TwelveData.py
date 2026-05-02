@@ -38,7 +38,7 @@ DEFAULT_OBSERVATION_COLUMNS = (
     "trange",
     "ultosc",
 )
-_INFER_FLAT_OBSERVATION_DIMENSION = -1
+_INFER_SHAPE = -1
 
 
 def _append_history(history, new_history):
@@ -76,6 +76,9 @@ class TwelveData:
         self.columns = self._validate_columns(columns)
         self.history = None
         self.td = TDClient(apikey=self.token)
+
+        if self.start is not None and self.end is not None:
+            self._ensure_history_window()
 
     @staticmethod
     def _validate_required_text(value, name):
@@ -212,4 +215,4 @@ class TwelveData:
         technical_indicator_data = self._apply_indicators(time_series)
         ordered_data = technical_indicator_data.sort_index(ascending=True)
         observations = ordered_data[list(self.columns)]
-        return observations.values.reshape(_INFER_FLAT_OBSERVATION_DIMENSION)
+        return observations.values.reshape(_INFER_SHAPE)
